@@ -94,8 +94,19 @@ int main() {
 
 <br>
 
-![Etapa 1 - Inicializando Container e Compilando e Testando Processos Reading e Writing](imagens/write_file.png)
-![Etapa 1 - Inicializando Container e Compilando e Testando Processos Reading e Writing](imagens/reader_file.png)
+### OUTPUTS
+
+```bash
+Escritor: Mensagem escrita no arquivo.
+Escritor: Aguardando leitura...
+Escritor: Arquivo lido e removido. Finalizado.
+```
+
+```bash
+Leitor: Mensagem lida:
+Olá, comunicação via arquivo!
+Leitor: Arquivo renomeado para comunicacao.lida. Finalizado.
+```
 
 <br>
 
@@ -109,6 +120,11 @@ int main() {
 * O segundo código fonte C (Reader Process) é responsável por ler o conteúdo de um arquivo
     1. Linha 1 e 2 (SHELL) - Exibi a mensagem do documento (Ler);
     2. Linha 3 (SHELL) - Renomea o arquivo para comunicacao.lida e finaliza a operação.
+
+* Mais lento devido as operações I/O em disco.
+* Os dados permanecem no arquivo até ele ser removido.
+* Mais simples implementação.
+* Limitantes como espaço em disco e desempenho do sistema.
 
 <br>
 
@@ -211,25 +227,39 @@ int main() {
 
 <br>
 
-![Etapa 2 - Testando Processos Writing e Reading Usando Memória Compartilhada](imagens/)
-![Etapa 2 - Testando Processos Writing e Reading Usando Memória Compartilhada](imagens/)
+### OUTPUTS
+
+```bash
+Escritor: Mensagem escrita na memória compartilhada.
+Escritor: Aguardando leitura...
+Escritor: Memória compartilhada liberada.
+```
+
+```bash
+Leitor: Mensagem lida: "Olá, Memória Compartilhada!"
+Leitor: Finalizado.
+```
 
 <br>
 
 ### **OBSERVAÇÕES**
 
-* 
+* O primeiro código fonte C (Write Memory Process) é responsavel por escrever em um espaço de memória reservado com key 1234.
+    1. Linha 1 (BASH): Escreve a mensagem em um espaço de memória reservado;
+    2. Linha 2 (BASH): Aguarda a leitura de outro processo dessa mensagem nesse espaço de memória;
+    3. Linha 3 (BASH): Confirma que a mensagem foi visualizada e libera o espaço de memória.
+
+* O segundo código fonte C (Reader Memory Process) é responsável por ler uma mensagem de um espaço de memória reservado com key 1234.
+    1. Linha 1 (BASH): Acessa o espaço de memória reservado e exibi a mensagem escrita;
+    2. Linha 2 (BASH): Finaliza o processo de leitura.
+
+* Mais velocidade devido ao acesso direto no espaço de memória reservado e compaertilhado.
+* Há a sincronização explicita entre os processos (Se o Writer Memory Process não reserva o espaço de memória o Reader Memory Process não consegue acessa-lo).
+* Possui um limitante baseado no tamanho do espaço de memória reservado.
 
 <br>
 
 ## Etapa 3 - Comparando Processos Writing e Reading Usando Memória Compartilhada com e sem Threads
-
-### Comandos Usados para o Monitoramento:
-* `perf stat` - Mede detalhadamente o desempenho de um programa, mostrando:
-    1. Quanto tempo a CPU realmente trabalhou;
-    2. Quantos recursos foram usados.
-
-<br>
 
 ### Código-Fonte C - Writer com Threads
 ```c
@@ -377,17 +407,30 @@ int main() {
 
 <br>
 
-![Etapa 3 - Comparando Processos Writing e Reading Usando Memória Compartilhada com e sem Threads](imagens/)
-![Etapa 3 - Comparando Processos Writing e Reading Usando Memória Compartilhada com e sem Threads](imagens/)
+### OUTPUTS
+
+```bash
+Writer: Mensagem escrita. Notificando leitor...
+Writer: Confirmação recebida. Mensagem lida pelo leitor.
+```
+
+```bash
+Reader: Mensagem recebida: Olá, comunicação via memória compartilhada com threads!
+```
 
 <br>
 
 ### **OBSERVAÇÕES**
 
-* 
+* Maior eficiencia com Threads (sem Threads usa o sleep(1) que causa uma menor eficiencia)
+* Possui maior complexidade devido a sincronização robusta do modelo de threads (Mutex - evitar dois processos acessarem o mesmo espaço de memória ao mesmo tempo)
+* Em comparação com os dois modelos anteriores (Persistencia em Arquivos e Persistencia em Memória sem Threads) o modelo usando threads é mais eficiente e evitar esperas desnecessárias.
 
 <br>
 
 ## Conclusão
 
-> 
+> Com base nos códigos fontes C dos processos analisados pode ser observado:
+> 1. O código fonte C dos processos de Write e Read baseado na persistência de arquivos como comunicação entre processos é o mais simples em implementação, porém possui uma baixa eficiencia devido as limitações como o espaço em disco e a variabilidade do sistema.
+> 2. O código font C dos processos de Write e Read usando compartilhamento de memória utilizam da persistência de informações em espaços de memórias reservados e acessados apenas atráves da key. Possui uma maior sincronização entre processos (o processo de Read apenas pode acessar o espaço de memória reservado quando este for criado pelo processo Write), além disso possui uma eficiência maior devido ao uso de Memória RAM e da reserva de espaço na memória para cada comunicação entre processos.
+> 3. O código fonte C dos processos de Write e Read usando compartilhamento de memória com threads são o mais eficientes por evitar esperas desnecessárias (sleep(1) tópico 2) trazendo as threads como forma de gera uma sincronização maior entre os processos, porém dessa maneira sua complexidade é aumentada devido a robustez de implementação tendo que lidar com Mutex (evitar que dois processos acesse simultaneamente o mesmo espaço de memória) e condições.
